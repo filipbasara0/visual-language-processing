@@ -10,8 +10,8 @@ from model.utils import make_std_mask
 NER_TAGS = [
     "O", "B-PERSON", "I-PERSON", "B-NORP", "I-NORP", "B-FAC", "I-FAC", "B-ORG",
     "I-ORG", "B-GPE", "I-GPE", "B-LOC", "I-LOC", "B-PRODUCT", "I-PRODUCT",
-    "B-DATE", "I-DATE", "B-TIME", "I-TIME", "B-PERCENT", "I-PERCENT", "B-MONEY",
-    "I-MONEY", "B-QUANTITY", "I-QUANTITY", "B-ORDINAL", "I-ORDINAL",
+    "B-DATE", "I-DATE", "B-TIME", "I-TIME", "B-PERCENT", "I-PERCENT",
+    "B-MONEY", "I-MONEY", "B-QUANTITY", "I-QUANTITY", "B-ORDINAL", "I-ORDINAL",
     "B-CARDINAL", "I-CARDINAL", "B-EVENT", "I-EVENT", "B-WORK_OF_ART",
     "I-WORK_OF_ART", "B-LAW", "I-LAW", "B-LANGUAGE", "I-LANGUAGE"
 ]
@@ -34,7 +34,7 @@ def tokens2wordpiece(tokens,
         word_pieces = tokenizer.tokenize(token)
         if "B-" in ner_targets[ner_tag]:
             broadcast_ner_tags = [ner_tag
-                                 ] + [ner_tag + 1] * (len(word_pieces) - 1)
+                                  ] + [ner_tag + 1] * (len(word_pieces) - 1)
         else:
             broadcast_ner_tags = [ner_tag] * len(word_pieces)
 
@@ -93,8 +93,6 @@ class VLPTokenClassificationDataset(Dataset):
     def __getitem__(self, index):
         image_path, tokens, tgt, tgt_y, tgt_mask, ner_tags, pos_tags = self.data[
             index]
-        # TODO: remove
-        image_path = "../notebooks/" + image_path
         image = PIL.Image.open(image_path)
 
         if self.training and random.random() < 0.5:

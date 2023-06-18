@@ -9,18 +9,33 @@ from model.pos_embs import SinePositionalEncoding
 from model.attention import MultiHeadAttention
 
 
-def get_transformer(model_dim, num_layers, ff_dim, num_heads, vocab_size,
-                    dropout):
+def get_transformer(model_dim,
+                    num_layers,
+                    ff_dim,
+                    num_heads,
+                    vocab_size,
+                    dropout,
+                    transformer_type="encoder_decoder",
+                    dec_div=4):
     c = copy.deepcopy
     attn = MultiHeadAttention(num_heads, model_dim)
     ff = PositionwiseFeedForward(model_dim, ff_dim, dropout)
 
-    transformer = EncoderDecoder(
-        Encoder(EncoderLayer(model_dim, c(attn), c(ff), dropout), num_layers),
-        Decoder(DecoderLayer(model_dim, c(attn), c(attn), c(ff), dropout),
-                num_layers),
-        nn.Sequential(Embeddings(model_dim, vocab_size),
-                      SinePositionalEncoding(model_dim)))
+    if transformer_type == "encoder_decoder":
+        attn_dec = MultiHeadAttention(num_heads // dec_div, model_dim)
+        ff_dec = PositionwiseFeedForward(model_dim, ff_dim // dec_div, dropout)
+        transformer = EncoderDecoder(
+            Encoder(EncoderLayer(model_dim, c(attn), c(ff), dropout),
+                    num_layers),
+            Decoder(
+                DecoderLayer(model_dim, c(attn_dec), c(attn_dec), c(ff_dec),
+                             dropout), num_layers // dec_div),
+            nn.Sequential(Embeddings(model_dim, vocab_size),
+                          SinePositionalEncoding(model_dim)))
+    elif transformer_type == "encoder":
+        transformer = EncoderDecoder(
+            Encoder(EncoderLayer(model_dim, c(attn), c(ff), dropout),
+                    num_layers), nn.Identity(), None)
 
     return transformer
 
@@ -60,11 +75,11 @@ class EncoderDecoder(nn.Module):
         self.decoder = decoder
         self.tgt_embed = tgt_embed
 
-    def forward(self, src, tgt, tgt_mask, src_mask=None):
-        return self.decode(self.encode(src, src_mask),
-                           tgt,
-                           tgt_mask,
-                           src_mask=src_mask)
+    def forward(self, src, tgt=None, tgt_mask=None, src_mask=None):
+        memory = self.encode(src, src_mask)
+        if torch.is_tensor(tgt) and torch.is_tensor(tgt_mask):
+            return self.decode(memory, tgt, tgt_mask, src_mask=src_mask)
+        return memory
 
     def encode(self, src, src_mask=None):
         return self.encoder(src, src_mask)

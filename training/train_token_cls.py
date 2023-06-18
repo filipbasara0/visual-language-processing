@@ -17,15 +17,15 @@ warnings.filterwarnings('ignore')
 POS_TAGS = [
     "XX", "``", "$", "''", "*", ",", "-LRB-", "-RRB-", ".", ":", "ADD", "AFX",
     "CC", "CD", "DT", "EX", "FW", "HYPH", "IN", "JJ", "JJR", "JJS", "LS", "MD",
-    "NFP", "NN", "NNP", "NNPS", "NNS", "PDT", "POS", "PRP", "PRP$", "RB", "RBR",
-    "RBS", "RP", "SYM", "TO", "UH", "VB", "VBD", "VBG", "VBN", "VBP", "VBZ",
-    "VERB", "WDT", "WP", "WP$", "WRB"
+    "NFP", "NN", "NNP", "NNPS", "NNS", "PDT", "POS", "PRP", "PRP$", "RB",
+    "RBR", "RBS", "RP", "SYM", "TO", "UH", "VB", "VBD", "VBG", "VBN", "VBP",
+    "VBZ", "VERB", "WDT", "WP", "WP$", "WRB"
 ]
 NER_TAGS = [
     "O", "B-PERSON", "I-PERSON", "B-NORP", "I-NORP", "B-FAC", "I-FAC", "B-ORG",
     "I-ORG", "B-GPE", "I-GPE", "B-LOC", "I-LOC", "B-PRODUCT", "I-PRODUCT",
-    "B-DATE", "I-DATE", "B-TIME", "I-TIME", "B-PERCENT", "I-PERCENT", "B-MONEY",
-    "I-MONEY", "B-QUANTITY", "I-QUANTITY", "B-ORDINAL", "I-ORDINAL",
+    "B-DATE", "I-DATE", "B-TIME", "I-TIME", "B-PERCENT", "I-PERCENT",
+    "B-MONEY", "I-MONEY", "B-QUANTITY", "I-QUANTITY", "B-ORDINAL", "I-ORDINAL",
     "B-CARDINAL", "I-CARDINAL", "B-EVENT", "I-EVENT", "B-WORK_OF_ART",
     "I-WORK_OF_ART", "B-LAW", "I-LAW", "B-LANGUAGE", "I-LANGUAGE"
 ]
@@ -52,21 +52,14 @@ TRAIN_EVAL_STEP = 3000
 
 def run_token_cls_training(args):
     current_date_str = datetime.now().strftime('%m%d%Y_%H%M%S')
-    # os.makedirs(f"./results/mim_features/{current_date_str}", exist_ok=True)
-
     tokenizer, vocab_size = get_tokenizer(args)
 
     config = model_config_factory(args.model_name)
-    model = VLPForTokenClassification(
-        model_dim=config["model_dim"],
-        num_layers=config["num_layers"],
-        num_heads=config["num_heads"],
-        ff_dim=config["ff_dim"],
-        feature_map_size=config["feature_map_size"],
-        vocab_size=vocab_size,
-        num_ner_tags=len(NER_TAGS),
-        num_pos_tags=len(POS_TAGS),
-        dropout=0.0)
+    model = VLPForTokenClassification(**config,
+                                      vocab_size=vocab_size,
+                                      num_ner_tags=len(NER_TAGS),
+                                      num_pos_tags=len(POS_TAGS),
+                                      dropout=0.0)
 
     if args.pretrained_model_path:
         pretrained = torch.load(args.pretrained_model_path)["model_state"]
@@ -109,8 +102,10 @@ def run_token_cls_training(args):
                                                        tgt,
                                                        tgt_mask=tgt_mask)
 
-            loss_fct = nn.CrossEntropyLoss(label_smoothing=args.label_smoothing)
-            loss_txt = loss_fct(logits_txt.view(-1, vocab_size), tgt_y.view(-1))
+            loss_fct = nn.CrossEntropyLoss(
+                label_smoothing=args.label_smoothing)
+            loss_txt = loss_fct(logits_txt.view(-1, vocab_size),
+                                tgt_y.view(-1))
             loss_ner = loss_fct(logits_ner.view(-1, len(NER_TAGS)),
                                 ner_tags.view(-1))
             loss_pos = loss_fct(logits_pos.view(-1, len(POS_TAGS)),
@@ -165,9 +160,8 @@ def run_token_cls_training(args):
                             ' [PAD] ', '').replace('[PAD]', ''))
                     print('!' * 50)
                     print(
-                        tokenizer.decode(idx.tolist()).replace(' [PAD] ',
-                                                               '').replace(
-                                                                   '[PAD]', ''))
+                        tokenizer.decode(idx.tolist()).replace(
+                            ' [PAD] ', '').replace('[PAD]', ''))
                     print('#' * 100)
 
             logs = {
@@ -259,7 +253,8 @@ def evaluate(model,
                                                        tgt_mask=tgt_mask)
 
             loss_fct = nn.CrossEntropyLoss()
-            loss_txt = loss_fct(logits_txt.view(-1, vocab_size), tgt_y.view(-1))
+            loss_txt = loss_fct(logits_txt.view(-1, vocab_size),
+                                tgt_y.view(-1))
             loss_ner = loss_fct(logits_ner.view(-1, len(NER_TAGS)),
                                 ner_tags.view(-1))
             loss_pos = loss_fct(logits_pos.view(-1, len(POS_TAGS)),
@@ -295,9 +290,8 @@ def evaluate(model,
                             ' [PAD] ', '').replace('[PAD]', ''))
                     print('!' * 50)
                     print(
-                        tokenizer.decode(idx.tolist()).replace(' [PAD] ',
-                                                               '').replace(
-                                                                   '[PAD]', ''))
+                        tokenizer.decode(idx.tolist()).replace(
+                            ' [PAD] ', '').replace('[PAD]', ''))
                     print('#' * 100)
 
             total_loss += loss.item()

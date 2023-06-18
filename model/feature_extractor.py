@@ -1,5 +1,5 @@
 import torch.nn as nn
-from torchvision.models import resnet50
+from torchvision.models import resnet50, resnet101
 
 
 class ResNetFeatureExtractor(nn.Module):
@@ -8,7 +8,7 @@ class ResNetFeatureExtractor(nn.Module):
         super(ResNetFeatureExtractor, self).__init__()
 
         self.feature_extractor = nn.Sequential(
-            *list(resnet50(pretrained=True).children())[:-2])
+            *list(resnet101(pretrained=True).children())[:-2])
 
         self.input_proj = nn.Conv2d(feature_map_size,
                                     out_features_size,

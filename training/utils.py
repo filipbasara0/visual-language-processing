@@ -6,13 +6,6 @@ from transformers import AutoTokenizer
 from model.utils import subsequent_mask
 
 
-def _lr_schedule(step, model_dim, factor, warmup):
-    if step == 0:
-        step = 1
-    return factor * (model_dim**(-0.5) *
-                     min(step**(-0.5), step * warmup**(-1.5)))
-
-
 def get_scheduler(model, args, config, steps_per_epoch):
     optimizer = AdamW(model.parameters(),
                       lr=args.learning_rate,
@@ -20,20 +13,11 @@ def get_scheduler(model, args, config, steps_per_epoch):
                       eps=1e-8,
                       weight_decay=5e-2)
 
-    lr_scheduler = torch.optim.lr_scheduler.ConstantLR(optimizer,
-                                                       factor=1.0,
-                                                       total_iters=0)
-
-    # lr_scheduler = torch.optim.lr_scheduler.LambdaLR(
-    #     optimizer=optimizer,
-    #     lr_lambda=lambda step: _lr_schedule(step, config["model_dim"], 1, args.
-    #                                         num_warmup_steps))
-
-    # lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(
-    #     optimizer,
-    #     max_lr=args.learning_rate,
-    #     steps_per_epoch=steps_per_epoch,
-    #     epochs=args.num_epochs)
+    lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(
+        optimizer,
+        max_lr=args.learning_rate,
+        steps_per_epoch=steps_per_epoch,
+        epochs=args.num_epochs)
 
     return optimizer, lr_scheduler
 

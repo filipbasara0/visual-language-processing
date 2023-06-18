@@ -32,7 +32,6 @@ def run_inference(args):
             image_size=args.image_size,
             device=device,
         )
-
         print(
             idx, image_path,
             tokenizer.decode(out[0].tolist()).replace(' [PAD] ',

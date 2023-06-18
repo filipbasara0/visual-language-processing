@@ -11,8 +11,8 @@ import time
 from multiprocessing import Pool, Process, Queue
 from queue import Empty
 
-random.seed(420)
-np.random.seed(420)
+random.seed(123123123)
+np.random.seed(123123123)
 
 CHUNK_SIZE = 128
 
@@ -199,57 +199,18 @@ def generate_unmasked_image(text, save_images=False):
         save_image=save_images)
 
 
-def prepare_data(data, tokenizer, max_text_len):
-    start_token_id, end_token_id = tokenizer.convert_tokens_to_ids(
-        ['[START]', '[END]'])
-    data_pairs = []
-    idx = 0
-    # for text in data[:10000]:
-    for text in data:
-        if idx % 100000 == 0:
-            print(idx)
-        idx += 1
-        text = text.replace("@-@",
-                            "-").replace("@.@",
-                                         ".").replace("@,@",
-                                                      ",").replace("@;@", ";")
-        tokenized_text = tokenizer.tokenize(text)
-        tokenized_text = tokenizer.convert_tokens_to_ids(
-            tokenized_text)[:max_text_len - 2]
-
-        tokenized_text = [start_token_id] + tokenized_text + [end_token_id]
-
-        data_pairs.append((text, tokenized_text))
-
-    return data_pairs
-
-
-def generate_data_instance(text, tokenized_text, max_text_len, training=True):
+def generate_data_instance(text, training=True):
     image = generate_unmasked_image(text, save_images=False)
 
     if training and random.random() < 0.5:
         image = Image.fromarray(np.invert(image))
 
-    tgt = tokenized_text[:-1]
-    tgt_y = tokenized_text[1:]
-
-    padding_len = max_text_len - len(tgt)
-    tokenized_text += [0] * padding_len
-    tgt += [0] * padding_len
-    tgt_y += [0] * padding_len
-
-    tgt = np.array(tgt)
-    tgt_y = np.array(tgt_y)
-
-    tgt_mask = make_std_mask(tgt, 0)
-
-    return image, tgt, tgt_y, tgt_mask
+    return image
 
 
-def gen_process(text, tokenized_text, max_text_len, training):
-    image, tgt, tgt_y, tgt_mask = generate_data_instance(
-        text, tokenized_text, max_text_len, training)
-    return (image, tgt, tgt_y, tgt_mask)
+def gen_process(text, target, training):
+    image = generate_data_instance(text, training)
+    return (image, target)
 
 
 def divide_chunks(l, n):
@@ -261,13 +222,11 @@ def divide_chunks(l, n):
 
 def collate_batch(batch):
     images = torch.stack([F.to_tensor(b[0]) for b in batch])
-    tgt = torch.tensor([b[1] for b in batch])
-    tgt_y = torch.tensor([b[2] for b in batch])
-    tgt_mask = torch.tensor([b[3] for b in batch])
-    return images, tgt, tgt_y, tgt_mask
+    targets = torch.tensor([b[1] for b in batch])
+    return images, targets
 
 
-def producer(queue, batch_size, max_text_len, training):
+def producer(queue, batch_size, training):
     data_range = list(range(len(data)))
     idx = 0
     while idx < len(data_range):
@@ -277,9 +236,8 @@ def producer(queue, batch_size, max_text_len, training):
         chunks = []
         tasks = []
         for index in data_range[idx:idx + CHUNK_SIZE]:
-            text, tokenized_text = data[index]
-            out = pool.apply_async(
-                gen_process, [text, tokenized_text, max_text_len, training])
+            _, target, text = data[index]
+            out = pool.apply_async(gen_process, [text, target, training])
             tasks.append(out)
 
         for task in tasks:
@@ -312,10 +270,10 @@ def generate(queue):
     print('Consumer: Done', flush=True)
 
 
-def start_processes(batch_size, max_text_len, training):
+def start_processes(batch_size, training):
     queue = Queue()
     producer_process = Process(target=producer,
-                               args=(queue, batch_size, max_text_len, training))
+                               args=(queue, batch_size, training))
     producer_process.start()
     return queue
 
@@ -323,7 +281,7 @@ def start_processes(batch_size, max_text_len, training):
 def get_online_generator(train_data, tokenizer, max_text_len, batch_size,
                          training):
     global data
-    data = prepare_data(train_data, tokenizer, max_text_len)
+    data = train_data
     random.shuffle(data)
-    queue = start_processes(batch_size, max_text_len, training)
+    queue = start_processes(batch_size, training)
     return generate(queue)
