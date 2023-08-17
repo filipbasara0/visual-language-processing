@@ -1,6 +1,12 @@
 # Visual Language Processing
 Trying to figure out if AI can understand natural language from raw pixels.
 
+For a detailed report on the project, please refer to this [blog](https://medium.com/@basarafilip/visual-language-processing-e2496ce67f94)! 
+
+Note:
+* Relevant file for MLM training dataset - [text_recog_masked.py](https://github.com/filipbasara0/visual-language-processing/blob/main/dataset/text_recog_masked.py)
+* Relevant file for MLM training loop - [train_text_rec_masked.py](https://github.com/filipbasara0/visual-language-processing/blob/main/training/train_text_rec_masked.py)
+
 ## Intro
 The goal of this project is to train a model to recognize and understand tokens from an image.
 
@@ -8,7 +14,7 @@ The VLP model is trained to output text from an image token by token, with some 
 
 A hybrid CNN-transformer model (similar to DETR) is used for this task:
 
-`[image] => CNN => transformer_encoder => transformer_decoder => linear`.
+![Untitled Diagram drawio (17)](https://github.com/filipbasara0/visual-language-processing/assets/29043871/e65f1b86-3696-4a2d-8e6f-65ee3d23cbf6)
 
 For larger models, the transformer encoder-decoder is asymetric, meaning that the decoder has a lot less parameters compared to the encoder. This is done in purpose, to make the encoder store as much knowledge about the language as possible. The asymetric structure reflected well on MNLI results.
 
