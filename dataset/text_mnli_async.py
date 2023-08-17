@@ -70,10 +70,6 @@ def make_std_mask(tgt, pad):
 
 ALIGNMENTS = ["center", "left", "right", "down", "up"]
 font_category_distributions = {
-    # "small": [(56, 22), (50, 22), (58, 22), (50, 26), (46, 28), (40, 32),
-    #           (60, 22), (62, 22)],
-    # "medium": [(40, 32), (42, 28)],
-    # "large": [(34, 38)]
     "small": (30, 30, 55),
     "medium": (23, 30, 65),
     "large": (20, 30, 75)
@@ -129,13 +125,6 @@ def create_image(text,
     image = Image.new(mode="RGB", size=(width, height),
                       color="white")  # (700, 620)
     draw = ImageDraw.Draw(image)
-
-    # text width on image
-    # text_width, text_height = draw.textsize(text, font=font)
-    # x_text, y_text = get_text_coords((width, height), (text_width, text_height),
-    #                                  align)
-
-    # draw.text((x_text, y_text), text, font=font, fill=(255, 255, 255))
 
     l, t, r, b = draw.multiline_textbbox((0, 0), text, font=font)
     l_offset = abs(l) + 10

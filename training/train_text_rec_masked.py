@@ -63,27 +63,8 @@ def run_text_rec_masked_training(args):
                 logits = model(images, tgt, tgt_mask=tgt_mask)
 
                 loss_fct = nn.CrossEntropyLoss(
-                    label_smoothing=args.label_smoothing,
-                    # ignore_index=-100,
-                    reduction="none")
-                # tgt_y[tgt_y != tokenizer.mask_token_id] = -100
-                # logits[tgt_y != tokenizer.mask_token_id] = -100
+                    label_smoothing=args.label_smoothing, reduction="none")
                 loss = loss_fct(logits.view(-1, vocab_size), tgt_y.view(-1))
-                # print("loss", loss.size())
-                # print(loss)
-                # print("mask_tokens_idxs", mask_tokens_idxs.size())
-                # print(mask_tokens_idxs)
-                # print(mask_tokens_idxs == -100)
-                # a = mask_tokens_idxs == -100
-                # print(a.sum())
-                loss = loss.view(mask_tokens_idxs.size(0),
-                                 mask_tokens_idxs.size(1))
-                # loss[mask_tokens_idxs == -100] *= 10
-                # loss_mask = torch.zeros_like(loss)
-                # for idx, t in enumerate(mask_tokens_idxs):
-                #     loss[idx, t[t!=-1]] *= 5
-                # loss_mask[idx, t[t!=-1]] = 1.0
-                # loss *= loss_mask
                 loss = loss.mean()
 
             # loss.backward()

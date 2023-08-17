@@ -22,7 +22,7 @@ def visualize(args):
     image_files = glob.glob(args.images_path)
     image_files = [f for f in image_files if os.path.isfile(f)]
 
-    integrate_gradients(model)
+    integrate_gradients(model, path = args.images_path)
 
 
 if __name__ == "__main__":

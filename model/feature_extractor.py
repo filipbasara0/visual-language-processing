@@ -8,7 +8,7 @@ class ResNetFeatureExtractor(nn.Module):
         super(ResNetFeatureExtractor, self).__init__()
 
         self.feature_extractor = nn.Sequential(
-            *list(resnet101(pretrained=True).children())[:-2])
+            *list(resnet50(pretrained=True).children())[:-2])
 
         self.input_proj = nn.Conv2d(feature_map_size,
                                     out_features_size,
